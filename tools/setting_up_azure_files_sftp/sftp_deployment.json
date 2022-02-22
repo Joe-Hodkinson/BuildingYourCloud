@@ -1,0 +1,65 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "storage_location": {
+      "type": "string",
+      "defaultValue": "westeurope",
+      "allowedValues": ["westeurope", "northcentralus", "eastus2", "eastus2euap", "centralus", "canadaeast", "canadacentral", "northeurope", "australiaeast", "switzerlandnorth", "germanywestcentral", "eastasia", "francecentral"]
+    },
+    "storageAccountName": {
+      "type": "string",
+      "metadata": {"description": "What is the name of your storage account?"}
+    },
+    "userName": {
+      "type": "string",
+      "metadata": { "description": "What username for local account would you like to use?" }
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2021-02-01",
+      "name": "[parameters('storageAccountName')]",
+      "location": "[parameters('storage_location')]",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "kind": "StorageV2",
+      "properties": {
+          "isHnsEnabled": true,
+          "isSftpEnabled": true
+      },
+      "resources": [
+        {
+          "type": "blobServices/containers",
+          "apiVersion": "2021-02-01",
+          "name": "[concat('default/', parameters('userName'))]",
+          "dependsOn": ["[parameters('storageAccountName')]"],
+          "properties": {
+            "publicAccess": "None"
+          }
+        },
+        {
+          "type": "localUsers",
+          "apiVersion": "2021-02-01",
+          "name": "[parameters('userName')]",
+          "properties": {
+            "permissionScopes": [
+                {
+                  "permissions": "rcwdl",
+                  "service": "blob",
+                  "resourceName": "[parameters('userName')]"
+                }
+            ],
+            "homeDirectory": "[parameters('userName')]",
+            "hasSharedKey": false
+          },
+          "dependsOn": ["[parameters('storageAccountName')]"]
+        }
+      ]
+    }
+  ],
+  "outputs": {
+  }
+}
